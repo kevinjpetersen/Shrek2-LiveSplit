@@ -16,7 +16,7 @@ namespace Shrek2_LiveSplit
             new Split("Puss in Boots Boss", "CutLog: [DEFEATEDPIB.CutScene]"),
             new Split("Factory", "CutLog: [HAMLETINTRO.CutScene]"),
             new Split("Bandits Forest", "CutLog: [HAMLETENDFARMHOUSE.CutScene]"),
-            new Split("Knight boss with Donkey", "CutLog: [PRISDONKEY_FATNIGHTENDLEVEL.CutScene]"),
+            new Split("Knight boss with Donkey", "8_Prison_PIB"),
             new Split("Knight boss with Puss in Boots", "CutLog: [PRISPIB_FATKNIGHTENDLEVEL.CutScene]"),
             new Split("Knight boss with Shrek", "CutLog: [PRISSHREK_MONGOINTRO.CutScene]"),
             new Split("Castle", "CutLog: [FINALBATTLE_FGMPREBATTLE.CutScene]"),
