@@ -1,4 +1,4 @@
-# Shrek 2 LiveSplit (Auto Splitter for Shrek 2)
+# Shrek 2 Auto Splitter for LiveSplit on PC.
 This Repository is a LiveSplit' Auto Splitter for Shrek 2 on PC.
 
 ## Features
