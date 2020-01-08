@@ -39,7 +39,6 @@
             this.chkExemple = new System.Windows.Forms.CheckBox();
             this.llCheckAll = new System.Windows.Forms.LinkLabel();
             this.lWarningNbrAutoSplit = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
             this.tlpMain.SuspendLayout();
             this.gbStartSplits.SuspendLayout();
             this.tlpStartSplits.SuspendLayout();
@@ -206,22 +205,10 @@
             this.lWarningNbrAutoSplit.Text = "Number of autosplits and segments warning";
             this.lWarningNbrAutoSplit.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 26.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.ForeColor = System.Drawing.Color.Magenta;
-            this.label1.Location = new System.Drawing.Point(26, 268);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(434, 39);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "HuniePops Custom Splitter";
-            // 
             // Shrek2Settings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.label1);
             this.Controls.Add(this.tlpMain);
             this.Name = "Shrek2Settings";
             this.Padding = new System.Windows.Forms.Padding(7);
@@ -256,6 +243,5 @@
         private System.Windows.Forms.CheckBox chkExemple;
         private System.Windows.Forms.CheckBox chkAutoReset;
         private System.Windows.Forms.Label lWarningNbrAutoSplit;
-        private System.Windows.Forms.Label label1;
     }
 }

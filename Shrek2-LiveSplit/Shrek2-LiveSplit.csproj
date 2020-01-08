@@ -51,7 +51,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GameMemory.cs" />
+    <Compile Include="Shrek2GameLogic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Shrek2Component.cs" />
     <Compile Include="Shrek2Factory.cs" />
@@ -61,6 +61,8 @@
     <Compile Include="Shrek2Settings.designer.cs">
       <DependentUpon>Shrek2Settings.cs</DependentUpon>
     </Compile>
+    <Compile Include="Shrek2Splits.cs" />
+    <Compile Include="Shrek2Variables.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Shrek2Settings.resx">

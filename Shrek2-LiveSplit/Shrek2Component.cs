@@ -9,6 +9,7 @@ using System.Xml;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Reflection;
+using System.Linq;
 
 namespace Shrek2_LiveSplit
 {
@@ -16,103 +17,104 @@ namespace Shrek2_LiveSplit
     {
         public override string ComponentName
         {
-            get { return "Shrek 2 (Improved)"; }
+            get { return Shrek2Variables.ComponentName; }
         }
 
         public Shrek2Settings Settings { get; set; }
-        public bool Disposed { get; private set; }
+        private bool IsDisposed { get; set; }
+        private bool IsDebug { get; set; }
 
-        private TimerModel _timer;
-        private GameMemory _gameMemory;
-        private LiveSplitState _state;
+        private TimerModel Timer { get; set; }
+        private Shrek2GameLogic GameLogic { get; set; }
+        private LiveSplitState LSS { get; set; }
 
-        public Shrek2Component(LiveSplitState state)
+
+        public Shrek2Component(LiveSplitState lss)
         {
-            bool debug = false;
-#if DEBUG
-            debug = true;
-#endif
-            Trace.WriteLine("[NoLoads] Using LiveSplit.Shrek2 component version " + Assembly.GetExecutingAssembly().GetName().Version + " " + ((debug) ? "Debug" : "Release") + " build");
-            _state = state;
+            #if DEBUG
+                IsDebug = true;
+            #endif
 
-            this.Settings = new Shrek2Settings(state);
+            Trace.WriteLine($"[NoLoads] Using {Shrek2Variables.ComponentName} component version " + Assembly.GetExecutingAssembly().GetName().Version + " " + (IsDebug ? "Debug" : "Release") + " build");
+            LSS = lss;
 
-            _timer = new TimerModel { CurrentState = state };
+            Settings = new Shrek2Settings(lss);
+            Timer = new TimerModel { CurrentState = lss };
 
-            _gameMemory = new GameMemory();
-            _gameMemory.OnMainMenuLoad += gameMemory_OnMainMenuLoad;
-            _gameMemory.OnNewGame += gameMemory_OnNewGame;
-            _gameMemory.OnSplitCompleted += gameMemory_OnSplitCompleted;
-            _gameMemory.OnLoadStart += gameMemory_OnLoadStart;
-            _gameMemory.OnLoadEnd += gameMemory_OnLoadEnd;
-            state.OnStart += State_OnStart;
-            _gameMemory.StartMonitoring();
+            GameLogic = new Shrek2GameLogic();
+            GameLogic.OnMainMenuLoad += GameLogic_OnMainMenuLoad;
+            GameLogic.OnNewGame += GameLogic_OnNewGame;
+            GameLogic.OnSplitCompleted += GameLogic_OnSplitCompleted;
+            GameLogic.OnLoadStart += GameLogic_OnLoadStart;
+            GameLogic.OnLoadEnd += GameLogic_OnLoadEnd;
+            lss.OnStart += State_OnStart;
+            GameLogic.StartMonitoring();
         }
 
         public override void Dispose()
         {
-            this.Disposed = true;
+            this.IsDisposed = true;
 
-            _state.OnStart -= State_OnStart;
+            LSS.OnStart -= State_OnStart;
 
-            if (_gameMemory != null)
+            if (GameLogic != null)
             {
-                _gameMemory.Stop();
+                GameLogic.Stop();
             }
         }
 
         void State_OnStart(object sender, EventArgs e)
         {
-            _gameMemory.resetSplitStates();
+            GameLogic.ResetSplitStates();
         }
 
-        void gameMemory_OnMainMenuLoad(object sender, EventArgs e)
+        void GameLogic_OnMainMenuLoad(object sender, EventArgs e)
         {
-            if ((_state.CurrentPhase == TimerPhase.Running || _state.CurrentPhase == TimerPhase.Ended) && this.Settings.AutoReset)
+            if ((LSS.CurrentPhase == TimerPhase.Running || LSS.CurrentPhase == TimerPhase.Ended) && Settings.AutoReset)
             {
-                Trace.WriteLine(String.Format("[NoLoads] Reset - {0}", _gameMemory.frameCounter));
-                _timer.Reset();
+                Trace.WriteLine(String.Format("[NoLoads] Reset - {0}", GameLogic.FrameCounter));
+                Timer.Reset();
             }
         }
 
-        void gameMemory_OnNewGame(object sender, EventArgs e)
+        void GameLogic_OnNewGame(object sender, EventArgs e)
         {
-            if (_state.CurrentPhase == TimerPhase.NotRunning && this.Settings.AutoStart)
+            if (LSS.CurrentPhase == TimerPhase.NotRunning && Settings.AutoStart)
             {
-                Trace.WriteLine(String.Format("[NoLoads] Start - {0}", _gameMemory.frameCounter));
-                _timer.Start();
+                Trace.WriteLine(String.Format("[NoLoads] Start - {0}", GameLogic.FrameCounter));
+                Timer.Start();
             }
         }
 
-        void gameMemory_OnSplitCompleted(object sender, string split)
+        void GameLogic_OnSplitCompleted(object sender, string split)
         {
-            int index = GameMemory.splits.IndexOf(split);
-            Debug.WriteLineIf(split != "", String.Format("[NoLoads] Trying to split {0}, State: {1} - {2}", split, _gameMemory.SplitStates[index], _gameMemory.frameCounter));
+            int index = Shrek2Splits.Splits.Select(p => p.ID).ToList().IndexOf(split);
+            Debug.WriteLineIf(split != "", String.Format("[NoLoads] Trying to split {0}, State: {1} - {2}", split, GameLogic.SplitStates[index], GameLogic.FrameCounter));
 
             if (Settings.Maps[split])
             {
-                if (_state.CurrentPhase != TimerPhase.NotRunning && !_gameMemory.SplitStates[index])
+                if (LSS.CurrentPhase != TimerPhase.NotRunning && !GameLogic.SplitStates[index])
                 {
-                    Trace.WriteLine(String.Format("[NoLoads] {0} Split - {1}", split, _gameMemory.frameCounter));
-                    _timer.Split();
-                    _gameMemory.SplitStates[index] = true;
+                    Trace.WriteLine(String.Format("[NoLoads] {0} Split - {1}", split, GameLogic.FrameCounter));
+                    Timer.Split();
+                    GameLogic.SplitStates[index] = true;
 
                 }
-                else if (_state.CurrentPhase != TimerPhase.Running)
-                    Debug.WriteLine(String.Format("[NoLoads] Didn't split. Reason: timer isn't running", _gameMemory.frameCounter));
+                else if (LSS.CurrentPhase != TimerPhase.Running)
+                    Debug.WriteLine(String.Format("[NoLoads] Didn't split. Reason: timer isn't running", GameLogic.FrameCounter));
             }
             else
                 Debug.WriteLine("[NoLoads] Didn't split " + split + ". Reason: not enabled in the settings");
         }
 
-        void gameMemory_OnLoadStart(object sender, EventArgs e)
+        void GameLogic_OnLoadStart(object sender, EventArgs e)
         {
-            _state.IsGameTimePaused = true;
+            LSS.IsGameTimePaused = true;
         }
 
-        void gameMemory_OnLoadEnd(object sender, EventArgs e)
+        void GameLogic_OnLoadEnd(object sender, EventArgs e)
         {
-            _state.IsGameTimePaused = false;
+            LSS.IsGameTimePaused = false;
         }
 
         public override XmlNode GetSettings(XmlDocument document)

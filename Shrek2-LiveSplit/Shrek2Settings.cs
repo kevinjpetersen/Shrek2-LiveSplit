@@ -41,11 +41,11 @@ namespace Shrek2_LiveSplit
             // defaults
             this.AutoStart = DEFAULT_AUTOSTART;
             this.AutoReset = DEFAULT_AUTORESET;
-            foreach (string map in GameMemory.splits)
+            foreach (var map in Shrek2Splits.Splits)
             {
-                Maps[map] = DEFAULT_MAP;
-                CheckBox checkbox = this.flp_AnyPercentSplits.Controls.Find("chk_" + map, true)[0] as CheckBox;
-                checkbox.Checked = Maps[map];
+                Maps[map.ID] = DEFAULT_MAP;
+                CheckBox checkbox = this.flp_AnyPercentSplits.Controls.Find("chk_" + map.ID, true)[0] as CheckBox;
+                checkbox.Checked = Maps[map.ID];
             }
         }
 
@@ -56,17 +56,17 @@ namespace Shrek2_LiveSplit
 
         private void AddMapCheckBoxes()
         {
-            foreach (string map in GameMemory.splits)
+            foreach (var map in Shrek2Splits.Splits)
             {
-                Maps.Add(map, DEFAULT_MAP);
+                Maps.Add(map.ID, DEFAULT_MAP);
                 CheckBox checkbox = new CheckBox();
                 checkbox.AutoSize = true;
                 checkbox.Dock = DockStyle.Top;
                 checkbox.Location = new System.Drawing.Point(3, 3);
                 checkbox.Margin = new Padding(3, 3, 50, 3);
-                checkbox.Name = "chk_" + map;
+                checkbox.Name = "chk_" + map.ID;
                 checkbox.Size = new System.Drawing.Size(78, 17);
-                checkbox.Text = map.Replace('_', ' ');
+                checkbox.Text = map.Name;
                 checkbox.UseVisualStyleBackColor = true;
                 this.flp_AnyPercentSplits.Controls.Add(checkbox);
 
@@ -84,9 +84,9 @@ namespace Shrek2_LiveSplit
 
             XmlElement mapsNode = doc.CreateElement("Maps");
 
-            foreach (string map in GameMemory.splits)
+            foreach (var map in Shrek2Splits.Splits)
             {
-                mapsNode.AppendChild(ToElement(doc, MAP_PREFIX + map, this.Maps[map]));
+                mapsNode.AppendChild(ToElement(doc, MAP_PREFIX + map.ID, this.Maps[map.ID]));
             }
             settingsNode.AppendChild(mapsNode);
 
@@ -101,11 +101,11 @@ namespace Shrek2_LiveSplit
             this.AutoReset = ParseBool(settings, "AutoReset", DEFAULT_AUTOSTART);
 
             XmlElement mapsNode = settings["Maps"];
-            foreach (string map in GameMemory.splits)
+            foreach (var map in Shrek2Splits.Splits)
             {
-                    Maps[map] = (mapsNode != null) ? ParseBool(mapsNode, MAP_PREFIX + map, DEFAULT_MAP) : DEFAULT_MAP;
-                    CheckBox checkbox = this.flp_AnyPercentSplits.Controls.Find("chk_" + map, true)[0] as CheckBox;
-                    checkbox.Checked = Maps[map];
+                    Maps[map.ID] = (mapsNode != null) ? ParseBool(mapsNode, MAP_PREFIX + map.ID, DEFAULT_MAP) : DEFAULT_MAP;
+                    CheckBox checkbox = this.flp_AnyPercentSplits.Controls.Find("chk_" + map.ID, true)[0] as CheckBox;
+                    checkbox.Checked = Maps[map.ID];
             }
         }
 

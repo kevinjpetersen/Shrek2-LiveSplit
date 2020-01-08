@@ -13,12 +13,12 @@ namespace Shrek2_LiveSplit
     {
         public string ComponentName
         {
-            get { return "Shrek 2 (Improved)"; }
+            get { return Shrek2Variables.ComponentName; }
         }
 
         public string Description
         {
-            get { return "Autosplitter for Shrek 2"; }
+            get { return $"LiveSplit Auto Splitter for {Shrek2Variables.ComponentName} (PC)"; }
         }
 
         public ComponentCategory Category
@@ -28,7 +28,7 @@ namespace Shrek2_LiveSplit
 
         public IComponent Create(LiveSplitState state)
         {
-            return (new Shrek2Component(state));
+            return new Shrek2Component(state);
         }
 
         public string UpdateName
@@ -38,7 +38,7 @@ namespace Shrek2_LiveSplit
 
         public string UpdateURL
         {
-            get { return "https://raw.githubusercontent.com/Dalet/LiveSplit.Shrek2/master/"; }
+            get { return Shrek2Variables.UpdateUrl; }
         }
 
         public Version Version

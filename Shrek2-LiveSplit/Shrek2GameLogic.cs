@@ -10,25 +10,8 @@ using System.Windows.Forms;
 
 namespace Shrek2_LiveSplit
 {
-    class GameMemory
+    class Shrek2GameLogic
     {
-        public const int SLEEP_TIME = 15;
-
-        public static List<string> splits = new List<string>(new string[]
-        {
-            "Tutorial",
-            "Wheel_Stealers",
-            "Spooky_Forest",
-            "Puss_in_Boots_boss",
-            "Factory",
-            "Bandits_Forest",
-            "Knight_boss_with_Horse",
-            "Knight_boss_with_Puss_in_Boots",
-            "Knight_boss_with_Shrek",
-            "Castle",
-            "End"
-        });
-
         public event EventHandler OnMainMenuLoad;
         public event EventHandler OnNewGame;
         public delegate void SplitCompletedEventHandler(object sender, string type);
@@ -36,17 +19,17 @@ namespace Shrek2_LiveSplit
         public event EventHandler OnLoadStart;
         public event EventHandler OnLoadEnd;
 
-        private Task _thread;
-        private CancellationTokenSource _cancelSource;
-        private SynchronizationContext _uiThread;
-        private List<int> _ignorePIDs;
+        private Task ListenGameThread;
+        private CancellationTokenSource ListenGameCancelSource;
+        private SynchronizationContext ListenGameUIThread;
+        private List<int> IgnorePIDs;
 
-        private DeepPointer _logBufferPtr;
-        private DeepPointer _logBufferCursorPtr;
-        private DeepPointer _isLoadingPtr;
-        private DeepPointer _isSavingPtr;
+        private DeepPointer LogBufferPtr;
+        private DeepPointer LogBufferCursorPtr;
+        private DeepPointer IsLoadingPtr;
+        private DeepPointer IsSavingPtr;
 
-        public uint frameCounter = 0;
+        public uint FrameCounter = 0;
         private enum ExpectedExeSizes
         {
             v433 = 438272,
@@ -54,31 +37,28 @@ namespace Shrek2_LiveSplit
 
         public bool[] SplitStates { get; set; }
 
-        public void resetSplitStates()
+        public Shrek2GameLogic()
         {
-            for (int i = 0; i < splits.Count; i++)
-            {
-                SplitStates[i] = false;
-            }
+            SplitStates = new bool[Shrek2Splits.Splits.Count];
+
+            LogBufferPtr = new DeepPointer(0x000566B4, 0x50);
+            LogBufferCursorPtr = new DeepPointer(0x000566B4, 0x4c);
+            IsLoadingPtr = new DeepPointer("Engine.dll", 0x000012E0, 0x5a4, 0x68);
+            IsSavingPtr = new DeepPointer("Core.dll", 0x001CA8B8, 0xbc, 0x50c, 0x400);
+
+            ResetSplitStates();
+
+            IgnorePIDs = new List<int>();
         }
 
-        public GameMemory()
+        public void ResetSplitStates()
         {
-            SplitStates = new bool[splits.Count];
-
-            _logBufferPtr = new DeepPointer(0x000566B4, 0x50);
-            _logBufferCursorPtr = new DeepPointer(0x000566B4, 0x4c);
-            _isLoadingPtr = new DeepPointer("Engine.dll", 0x000012E0, 0x5a4, 0x68);
-            _isSavingPtr = new DeepPointer("Core.dll", 0x001CA8B8, 0xbc, 0x50c, 0x400);
-
-            resetSplitStates();
-
-            _ignorePIDs = new List<int>();
+            for (int i = 0; i < Shrek2Splits.Splits.Count; i++) SplitStates[i] = false;
         }
 
         public void StartMonitoring()
         {
-            if (_thread != null && _thread.Status == TaskStatus.Running)
+            if (ListenGameThread != null && ListenGameThread.Status == TaskStatus.Running)
             {
                 throw new InvalidOperationException();
             }
@@ -87,26 +67,26 @@ namespace Shrek2_LiveSplit
                 throw new InvalidOperationException("SynchronizationContext.Current is not a UI thread.");
             }
 
-            _uiThread = SynchronizationContext.Current;
-            _cancelSource = new CancellationTokenSource();
-            _thread = Task.Factory.StartNew(MemoryReadThread);
+            ListenGameUIThread = SynchronizationContext.Current;
+            ListenGameCancelSource = new CancellationTokenSource();
+            ListenGameThread = Task.Factory.StartNew(GameMemoryReadThread);
         }
 
         public void Stop()
         {
-            if (_cancelSource == null || _thread == null || _thread.Status != TaskStatus.Running)
+            if (ListenGameCancelSource == null || ListenGameThread == null || ListenGameThread.Status != TaskStatus.Running)
             {
                 return;
             }
 
-            _cancelSource.Cancel();
-            _thread.Wait();
+            ListenGameCancelSource.Cancel();
+            ListenGameThread.Wait();
         }
-        void MemoryReadThread()
+        void GameMemoryReadThread()
         {
             Trace.WriteLine("[NoLoads] MemoryReadThread");
 
-            while (!_cancelSource.IsCancellationRequested)
+            while (!ListenGameCancelSource.IsCancellationRequested)
             {
                 try
                 {
@@ -116,7 +96,7 @@ namespace Shrek2_LiveSplit
                     while ((game = GetGameProcess()) == null)
                     {
                         Thread.Sleep(250);
-                        if (_cancelSource.IsCancellationRequested)
+                        if (ListenGameCancelSource.IsCancellationRequested)
                         {
                             return;
                         }
@@ -124,7 +104,7 @@ namespace Shrek2_LiveSplit
 
                     Trace.WriteLine("[NoLoads] Got game.exe!");
 
-                    frameCounter = 0;
+                    FrameCounter = 0;
                     int prevBufCursor = 0;
                     string prevBuf = String.Empty;
                     string currentMap = String.Empty;
@@ -133,17 +113,10 @@ namespace Shrek2_LiveSplit
 
                     while (!game.HasExited)
                     {
-                        string buf;
-                        _logBufferPtr.DerefString(game, 4096, out buf);
-
-                        int bufCursor;
-                        _logBufferCursorPtr.Deref(game, out bufCursor);
-
-                        int ret;
-                        _isLoadingPtr.Deref(game, out ret);
-
-                        int isSaving;
-                        _isSavingPtr.Deref(game, out isSaving);
+                        LogBufferPtr.DerefString(game, 4096, out string buf);
+                        LogBufferCursorPtr.Deref(game, out int bufCursor);
+                        IsLoadingPtr.Deref(game, out int ret);
+                        IsSavingPtr.Deref(game, out int isSaving);
 
                         bool isLoading = (ret == 2 || isSaving == 256);
 
@@ -159,7 +132,7 @@ namespace Shrek2_LiveSplit
                             string[] logLines = Regex.Split(log, @"(?<=\r\n)");
 
                             Debug.WriteLine(String.Format("------bufCursor: {0} prevBufCursor: {1}-------", bufCursor, prevBufCursor));
-                            Debug.WriteLine("--------------------" + frameCounter + "---------------------");
+                            Debug.WriteLine("--------------------" + FrameCounter + "---------------------");
                             Debug.Write(log);
 
                             int cursor = prevBufCursor;
@@ -190,62 +163,23 @@ namespace Shrek2_LiveSplit
                                 if (loadMapRegex.Success)
                                 {
                                     currentMap = loadMapRegex.Groups[1].Value.ToLower();
-                                    if (splits.Contains(currentMap))
-                                        Split(currentMap, frameCounter);
+                                    if (Shrek2Splits.Splits.Any(p => p.Name == currentMap))
+                                        Split(Shrek2Splits.Splits.First(p => p.Name == currentMap).ID, FrameCounter);
                                 }
-                                else if (line.Contains("Log: Server switch level: Book_Story_1.unr?GameState=GSTATE000"))
+                                else if (line.Contains(Shrek2Splits.NewGame_MemoryLine))
                                 {
-                                    _uiThread.Post(d =>
+                                    ListenGameUIThread.Post(d =>
                                     {
-                                        if (this.OnNewGame != null)
-                                        {
-                                            this.OnNewGame(this, EventArgs.Empty);
-                                        }
+                                        OnNewGame?.Invoke(this, EventArgs.Empty);
                                     }, null);
                                 }
-                                else if (line.Contains("CutLog: [SWAMPTRANSTOCAR.CutScene]"))
+                                else
                                 {
-                                    Split("Tutorial", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [CARRIAGE_AFTERLOGS.CutScene]"))
-                                {
-                                    Split("Wheel_Stealers", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [PIBAMBUSHINTRO.CutScene]"))
-                                {
-                                    Split("Spooky_Forest", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [DEFEATEDPIB.CutScene]"))
-                                {
-                                    Split("Puss_in_Boots_boss", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [HAMLETINTRO.CutScene]"))
-                                {
-                                    Split("Factory", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [HAMLETENDFARMHOUSE.CutScene]"))
-                                {
-                                    Split("Bandits_Forest", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [PRISDONKEY_FATNIGHTENDLEVEL.CutScene]"))
-                                {
-                                    Split("Knight_boss_with_Horse", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [PRISPIB_FATKNIGHTENDLEVEL.CutScene]"))
-                                {
-                                    Split("Knight_boss_with_Puss_in_Boots", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [PRISSHREK_MONGOINTRO.CutScene]"))
-                                {
-                                    Split("Knight_boss_with_Shrek", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [FINALBATTLE_FGMPREBATTLE.CutScene]"))
-                                {
-                                    Split("Castle", frameCounter);
-                                }
-                                else if (line.Contains("CutLog: [FINALBATTLE_YOUWIN.CutScene]"))
-                                {
-                                    Split("End", frameCounter);
+                                    if(Shrek2Splits.Splits.Any(p => p.CutSceneTriggers.Any(x => line.Contains(x))))
+                                    {
+                                        var splitValue = Shrek2Splits.Splits.FirstOrDefault(p => p.CutSceneTriggers.Any(x => line.Contains(x)));
+                                        Split(splitValue.ID, FrameCounter);
+                                    }
                                 }
 
                                 i++;
@@ -254,11 +188,11 @@ namespace Shrek2_LiveSplit
 
                         if (currentMap != prevCurrentMap)
                         {
-                            Debug.WriteLine(String.Format("[NoLoads] Detected map change from \"{0}\" to \"{1}\" - {2}", prevCurrentMap, currentMap, frameCounter));
+                            Debug.WriteLine(String.Format("[NoLoads] Detected map change from \"{0}\" to \"{1}\" - {2}", prevCurrentMap, currentMap, FrameCounter));
 
                             if (currentMap == "book_frontend.unr")
                             {
-                                _uiThread.Post(d =>
+                                ListenGameUIThread.Post(d =>
                                 {
                                     if (this.OnMainMenuLoad != null)
                                     {
@@ -273,8 +207,8 @@ namespace Shrek2_LiveSplit
                         {
                             if (isLoading)
                             {
-                                Trace.WriteLine("[NoLoads] Loading started - " + frameCounter);
-                                _uiThread.Post(d =>
+                                Trace.WriteLine("[NoLoads] Loading started - " + FrameCounter);
+                                ListenGameUIThread.Post(d =>
                                 {
                                     if (this.OnLoadStart != null)
                                     {
@@ -284,8 +218,8 @@ namespace Shrek2_LiveSplit
                             }
                             else
                             {
-                                Trace.WriteLine("[NoLoads] Loading ended - " + frameCounter);
-                                _uiThread.Post(d =>
+                                Trace.WriteLine("[NoLoads] Loading ended - " + FrameCounter);
+                                ListenGameUIThread.Post(d =>
                                 {
                                     if (this.OnLoadEnd != null)
                                     {
@@ -295,15 +229,15 @@ namespace Shrek2_LiveSplit
                             }
                         }
 
-                        frameCounter++;
+                        FrameCounter++;
                         prevBuf = buf;
                         prevBufCursor = bufCursor;
                         prevCurrentMap = currentMap;
                         prevIsLoading = isLoading;
 
-                        Thread.Sleep(SLEEP_TIME);
+                        Thread.Sleep(Shrek2Variables.GameLogic_SleepTime);
 
-                        if (_cancelSource.IsCancellationRequested)
+                        if (ListenGameCancelSource.IsCancellationRequested)
                         {
                             return;
                         }
@@ -319,7 +253,7 @@ namespace Shrek2_LiveSplit
 
         private void Split(string split, uint frame)
         {
-            _uiThread.Post(d =>
+            ListenGameUIThread.Post(d =>
             {
                 if (this.OnSplitCompleted != null)
                 {
@@ -331,7 +265,7 @@ namespace Shrek2_LiveSplit
         Process GetGameProcess()
         {
             Process game = Process.GetProcesses().FirstOrDefault(p => p.ProcessName.ToLower() == "game"
-                && !p.HasExited && !_ignorePIDs.Contains(p.Id));
+                && !p.HasExited && !IgnorePIDs.Contains(p.Id));
             if (game == null)
             {
                 return null;
@@ -339,8 +273,8 @@ namespace Shrek2_LiveSplit
 
             if (game.MainModule.ModuleMemorySize != (int)ExpectedExeSizes.v433)
             {
-                _ignorePIDs.Add(game.Id);
-                _uiThread.Send(d => MessageBox.Show("Unexpected game version." + game.MainModule.ModuleMemorySize, "LiveSplit.Shrek2",
+                IgnorePIDs.Add(game.Id);
+                ListenGameUIThread.Send(d => MessageBox.Show("Unexpected game version." + game.MainModule.ModuleMemorySize, "Shrek2-LiveSplit",
                     MessageBoxButtons.OK, MessageBoxIcon.Error), null);
                 return null;
             }
