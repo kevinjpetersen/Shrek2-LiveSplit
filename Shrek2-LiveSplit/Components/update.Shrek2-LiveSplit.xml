@@ -1,4 +1,14 @@
 <updates>
+	<update version="1.0.1">
+        <files>
+            <file path="Components/Shrek2-LiveSplit.dll" status="changed"/>
+        </files>
+        <changelog>
+            <change>
+                Fixed auto splitting of Knight boss with Donkey so that it splits if you skip the fight OR if you do the fight
+            </change>
+        </changelog>
+    </update>
     <update version="1.0.0">
         <files>
             <file path="Components/Shrek2-LiveSplit.dll" status="changed"/>
