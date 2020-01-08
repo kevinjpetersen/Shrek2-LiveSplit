@@ -18,6 +18,12 @@ At the moment until the Auto Splitter have been submitted and approved for the L
 6. Double-click on the newly added Control in the list, here you can enable/disable the splits you want
 7. Last but not least, ensure that your current activated Auto Splitter for Shrek 2 is Deactivated (If you have one)
 
+## Change log
+#### Version 1.0.1
+- Fixed auto splitting of Knight boss with Donkey so that it splits if you skip the fight OR if you do the fight
+#### Version 1.0.0
+- Intial release
+
 ## Future Plans
 - I'm working on making it possible to customize automated splits however you want, based on when cutscenes triggers. You will be able to do this through an interface in the LiveSplit Control Settings for the Component.
 
