@@ -14,6 +14,8 @@ This Repository is a LiveSplit' Auto Splitter for Shrek 2 on PC.
 4. Now it's activated and ready for use! If you need to customize it, you can click on the **Settings** button
 
 ## Change log
+#### Version 1.0.2
+- Removed Puss in Boots Boss Fight- Split to fix splitting issues. This will return on a later date where a more dynamic split manager will be added.
 #### Version 1.0.1
 - Fixed auto splitting of Knight boss with Donkey so that it splits if you skip the fight OR if you do the fight
 #### Version 1.0.0
