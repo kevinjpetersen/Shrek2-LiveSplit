@@ -13,7 +13,7 @@ namespace Shrek2_LiveSplit
             new Split("Tutorial", "CutLog: [SWAMPTRANSTOCAR.CutScene]"),
             new Split("Wheel Stealers", "CutLog: [CARRIAGE_AFTERLOGS.CutScene]"),
             new Split("Spooky Forest", new List<string>() { "CutLog: [FGM_OFFICE.CutScene]", "CutLog: [PIBAMBUSHINTRO.CutScene]" }),
-            new Split("Puss in Boots Boss", "CutLog: [DEFEATEDPIB.CutScene]"),
+            //new Split("Puss in Boots Boss", "CutLog: [DEFEATEDPIB.CutScene]"),
             new Split("Factory", "CutLog: [HAMLETINTRO.CutScene]"),
             new Split("Bandits Forest", "CutLog: [HAMLETENDFARMHOUSE.CutScene]"),
             new Split("Knight boss with Donkey", "8_Prison_PIB"),

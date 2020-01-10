@@ -1,4 +1,14 @@
 <updates>
+	<update version="1.0.2">
+        <files>
+            <file path="Components/Shrek2-LiveSplit.dll" status="changed"/>
+        </files>
+        <changelog>
+            <change>
+                Removed Puss in Boots Boss Fight- Split to fix splitting issues. This will return on a later date where a more dynamic split manager will be added.
+            </change>
+        </changelog>
+    </update>
 	<update version="1.0.1">
         <files>
             <file path="Components/Shrek2-LiveSplit.dll" status="changed"/>
