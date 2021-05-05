@@ -65,6 +65,7 @@ namespace Shrek2_LiveSplit
 
         void State_OnStart(object sender, EventArgs e)
         {
+            Timer.InitializeGameTime();
             GameLogic.ResetSplitStates();
         }
 
@@ -82,7 +83,11 @@ namespace Shrek2_LiveSplit
             if (LSS.CurrentPhase == TimerPhase.NotRunning && Settings.AutoStart)
             {
                 Trace.WriteLine(String.Format("[NoLoads] Start - {0}", GameLogic.FrameCounter));
+                Timer.InitializeGameTime();
+
                 Timer.Start();
+            Timer.InitializeGameTime();
+
             }
         }
 

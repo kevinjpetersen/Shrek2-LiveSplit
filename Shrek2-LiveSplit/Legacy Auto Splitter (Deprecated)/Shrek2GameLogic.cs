@@ -118,7 +118,7 @@ namespace Shrek2_LiveSplit
                         IsLoadingPtr.Deref(game, out int ret);
                         IsSavingPtr.Deref(game, out int isSaving);
 
-                        bool isLoading = (ret == 2 || isSaving == 256);
+                        bool isLoading = false; //(ret == 2 || isSaving == 256);
 
                         string log = String.Empty;
 
@@ -141,10 +141,10 @@ namespace Shrek2_LiveSplit
                             {
                                 Match validLine = Regex.Match(line, @"^(?:Log:|Init:|ScriptLog:|CutLog:|DevSound:|Localization:|Warning:|ScriptWarning:|Exit:|Uninitialized:).+\r\n");
                                 Match loadMapRegex = Regex.Match(line, @"LoadMap: ([^?]+)\?");
-                                Match splitRegex = Regex.Match(line, @"Bringing Level ([^ ?]+)\.MyLevel up for play");
-                                Match loadTimeRegex = Regex.Match(line, @"Load time (?:.+\\)?([^?]+): (\d+\.\d+) seconds total, (\d+\.\d+) app");
-                                Match saveStartRegex = Regex.Match(line, @"Saving game\.\.\. filename: .+\.usa");
-                                Match saveEndRegex = Regex.Match(line, @"Log: Moving '.+\.tmp' to '.+\.usa'");
+                                bool splitRegex = line.Contains("Bringing Level");
+                                bool loadTimeRegex = line.Contains("got player WindowsViewport0");
+                                bool saveStartRegex = line.Contains("Log: Saving game");
+                                bool saveEndRegex = line.Contains("Log: Moving");
 
                                 if (line.Equals(""))
                                     continue;
@@ -160,8 +160,57 @@ namespace Shrek2_LiveSplit
                                 }
                                 cursor += line.Length;
 
+                                if(loadTimeRegex)
+                                {
+                                    isLoading = false;
+                                    ListenGameUIThread.Post(d =>
+                                    {
+                                        if (this.OnLoadEnd != null)
+                                        {
+                                            this.OnLoadEnd(this, EventArgs.Empty);
+                                        }
+                                    }, null);
+                                }
+
+                                if(saveStartRegex)
+                                {
+                                    isLoading = true;
+                                    ListenGameUIThread.Post(d =>
+                                    {
+                                        if (this.OnLoadStart != null)
+                                        {
+                                            this.OnLoadStart(this, EventArgs.Empty);
+                                        }
+                                    }, null);
+                                }
+
+                                if (saveEndRegex)
+                                {
+                                    isLoading = false;
+                                    ListenGameUIThread.Post(d =>
+                                    {
+                                        if (this.OnLoadEnd != null)
+                                        {
+                                            this.OnLoadEnd(this, EventArgs.Empty);
+                                        }
+                                    }, null);
+                                }
+
+                                if (splitRegex)
+                                {
+                                    isLoading = true;
+                                    ListenGameUIThread.Post(d =>
+                                    {
+                                        if (this.OnLoadStart != null)
+                                        {
+                                            this.OnLoadStart(this, EventArgs.Empty);
+                                        }
+                                    }, null);
+                                }
+
                                 if (loadMapRegex.Success)
                                 {
+                                    isLoading = true;
                                     currentMap = loadMapRegex.Groups[1].Value.ToLower();
                                     if (Shrek2Splits.Splits.Any(p => p.Name == currentMap))
                                         Split(Shrek2Splits.Splits.First(p => p.Name == currentMap).ID, FrameCounter);
@@ -203,31 +252,31 @@ namespace Shrek2_LiveSplit
 
                         }
 
-                        if (isLoading != prevIsLoading)
-                        {
-                            if (isLoading)
-                            {
-                                Trace.WriteLine("[NoLoads] Loading started - " + FrameCounter);
-                                ListenGameUIThread.Post(d =>
-                                {
-                                    if (this.OnLoadStart != null)
-                                    {
-                                        this.OnLoadStart(this, EventArgs.Empty);
-                                    }
-                                }, null);
-                            }
-                            else
-                            {
-                                Trace.WriteLine("[NoLoads] Loading ended - " + FrameCounter);
-                                ListenGameUIThread.Post(d =>
-                                {
-                                    if (this.OnLoadEnd != null)
-                                    {
-                                        this.OnLoadEnd(this, EventArgs.Empty);
-                                    }
-                                }, null);
-                            }
-                        }
+                        //if (isLoading != prevIsLoading)
+                        //{
+                            //if (isLoading)
+                            //{
+                            //    Trace.WriteLine("[NoLoads] Loading started - " + FrameCounter);
+                            //    ListenGameUIThread.Post(d =>
+                            //    {
+                            //        if (this.OnLoadStart != null)
+                            //        {
+                            //            this.OnLoadStart(this, EventArgs.Empty);
+                            //        }
+                            //    }, null);
+                            //}
+                            //else
+                            //{
+                            //    Trace.WriteLine("[NoLoads] Loading ended - " + FrameCounter);
+                            //    ListenGameUIThread.Post(d =>
+                            //    {
+                            //        if (this.OnLoadEnd != null)
+                            //        {
+                            //            this.OnLoadEnd(this, EventArgs.Empty);
+                            //        }
+                            //    }, null);
+                            //}
+                        //}
 
                         FrameCounter++;
                         prevBuf = buf;

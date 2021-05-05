@@ -11,6 +11,6 @@ namespace Shrek2_LiveSplit
         public const string ComponentName = "Shrek 2 Improved";
         public const string UpdateUrl = "https://raw.githubusercontent.com/kevinjpetersen/Shrek2-LiveSplit/master/";
 
-        public const int GameLogic_SleepTime = 15;
+        public const int GameLogic_SleepTime = 1;
     }
 }
